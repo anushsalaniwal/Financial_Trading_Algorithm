@@ -82,9 +82,6 @@ for asset in assets:
     calculated_data = calculate_indicators(asset_data)
     processed_data[asset] = calculated_data  # Store the processed data separately
 
-# Combine processed data into a single DataFrame
-combined_data = pd.concat(processed_data.values(), axis=1, keys=processed_data.keys())
-
 # Generate signals for all assets
 signals = {asset: generate_signals(processed_data[asset]) for asset in assets}
 
@@ -138,8 +135,10 @@ class Portfolio:
 portfolio = Portfolio(initial_cash, transaction_cost, stop_loss_pct, take_profit_pct, risk_per_trade)
 
 # Backtesting loop
-for i in range(1, len(data)):
-    prices = {asset: data[asset]['Adj Close'].iloc[i] for asset in assets}
+dates = data.index
+
+for i in range(1, len(dates)):
+    prices = {asset: processed_data[asset]['Adj Close'].iloc[i] for asset in assets}
     signals_today = {asset: signals[asset].iloc[i] for asset in assets}
     
     # Update positions with current prices
@@ -157,13 +156,13 @@ for i in range(1, len(data)):
     
     # Update portfolio value
     portfolio_value = portfolio.update_portfolio_value(prices)
-    logging.info(f'Date: {data.index[i]}, Portfolio Value: {portfolio_value}')
+    logging.info(f'Date: {dates[i]}, Portfolio Value: {portfolio_value}')
 
 # Performance metrics
-portfolio_value_series = pd.Series(portfolio.portfolio_value)
+portfolio_value_series = pd.Series(portfolio.portfolio_value, index=dates[1:])
 returns = portfolio_value_series.pct_change().dropna()
 total_return = portfolio_value_series.iloc[-1] / initial_cash - 1
-annualized_return = (1 + total_return) ** (252 / len(data)) - 1
+annualized_return = (1 + total_return) ** (252 / len(dates)) - 1
 sharpe_ratio = returns.mean() / returns.std() * np.sqrt(252)
 max_drawdown = (portfolio_value_series / portfolio_value_series.cummax() - 1).min()
 
