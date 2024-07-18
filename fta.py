@@ -71,16 +71,22 @@ def generate_signals(df):
     df['Sell Signal'] = ((df['RSI'] > 70) | (df['StochRSI'] > 0.8) | (df['Adj Close'] > df['Upper Band'])).astype(int)
     return df
 
+# Initialize a dictionary to store processed data
+processed_data = {}
+
 # Calculate indicators for all assets
 for asset in assets:
     print(f"Calculating indicators for asset: {asset}")
     asset_data = data[[asset]].copy()
     asset_data.columns = ['Adj Close']  # Rename column for compatibility with functions
     calculated_data = calculate_indicators(asset_data)
-    data[asset] = calculated_data  # Assign the calculated data back to the main DataFrame
+    processed_data[asset] = calculated_data  # Store the processed data separately
+
+# Combine processed data into a single DataFrame
+combined_data = pd.concat(processed_data.values(), axis=1, keys=processed_data.keys())
 
 # Generate signals for all assets
-signals = {asset: generate_signals(data[[asset]].copy()) for asset in assets}
+signals = {asset: generate_signals(processed_data[asset]) for asset in assets}
 
 # Backtesting with dynamic position sizing and diversification
 class Portfolio:
