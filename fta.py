@@ -119,7 +119,9 @@ class Portfolio:
             self.trade_log.append({'asset': asset, 'price': price, 'action': 'sell', 'size': position['size'], 'cash': self.cash})
 
     def update_positions(self, prices):
-        for asset, position in self.positions.items():
+        assets_to_update = list(self.positions.keys())
+        for asset in assets_to_update:
+            position = self.positions[asset]
             current_price = prices[asset]
             if current_price <= position['entry_price'] * self.stop_loss_pct or current_price >= position['entry_price'] * self.take_profit_pct:
                 self.sell(asset, current_price)
